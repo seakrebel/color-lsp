@@ -2,6 +2,8 @@
 
 Contributing are welcome!
 
+> This is a fork of [huacnlee/color-lsp](https://github.com/huacnlee/color-lsp). Upstream issues and PRs should go to the original repo.
+
 ## color-lsp
 
 The `color-lsp` is a Language Server Protocol (LSP) server that provides color.

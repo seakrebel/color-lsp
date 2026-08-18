@@ -1,7 +1,8 @@
-# ColorLSP
+# ColorLSP (fork)
+
+> Fork of [huacnlee/color-lsp](https://github.com/huacnlee/color-lsp) with expanded language support, CSS4 color formats (oklch, oklab, lab, lch), and bug fixes.
 
 [![Zed Extension](https://img.shields.io/badge/-Zed_Extension-blue?style=flat&logo=zedindustries&logoColor=%23FFFFFF&logoSize=auto&labelColor=%23111111&color=%23084CCF)](https://zed.dev/extensions/color-highlight)
-[![CI](https://github.com/huacnlee/color-lsp/actions/workflows/test.yml/badge.svg)](https://github.com/huacnlee/color-lsp/actions/workflows/test.yml)
 
 ColorLSP is a Language Server Protocol (LSP) implementation for the highlight colors in documents, to provide [textDocument/documentColor](https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_documentColor).
 
