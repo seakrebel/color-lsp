@@ -1,7 +1,7 @@
 id = "color-highlight"
 name = "Color Highlight"
 description = "Highlight colors in your editor based on color-lsp."
-version = "0.3.0"
+version = "0.3.1"
 schema_version = 1
 authors = ["Jason Lee <huacnlee@gmail.com>"]
 repository = "https://github.com/huacnlee/color-lsp/tree/main/zed-color-highlight"
@@ -9,29 +9,56 @@ repository = "https://github.com/huacnlee/color-lsp/tree/main/zed-color-highligh
 [language_servers.color-lsp]
 name = "ColorLSP Server"
 languages = [
+    # Web
     "HTML",
-    "JSON",
-    "JSONC",
-    "JSON5",
+    "CSS",
+    "JavaScript",
+    "TypeScript",
+    "JSX",
+    "TSX",
+    "Vue.js",
+    "Svelte",
+    "Astro",
+    "ERB",
     "Tera",
     "Tera (HTML)",
     "Tera (CSS)",
     "Tera (JSON)",
     "Tera (YAML)",
     "Tera (TOML)",
-    "ERB",
-    "JavaScript",
-    "TypeScript",
-    "CSS",
-    "JSX",
-    "TSX",
-    "Vue.js",
+    # Data / Config
+    "JSON",
+    "JSONC",
+    "JSON5",
     "YAML",
     "TOML",
     "XML",
+    "Prisma",
+    # Systems / Native
     "Rust",
-    "Ruby",
-    "Python",
+    "C",
+    "C++",
     "Go",
+    "Zig",
+    # Managed
+    "Python",
+    "Ruby",
+    "Dart",
+    "Java",
+    "Kotlin",
+    "Swift",
+    "PHP",
+    # Scripting
+    "Bash",
+    "Shell Script",
+    "Lua",
+    "Nix",
+    # Functional
+    "Haskell",
+    "Elixir",
+    "Erlang",
+    "OCaml",
+    # Infra
+    "Dockerfile",
 ]
 code_action_kinds = []
