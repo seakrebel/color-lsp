@@ -256,10 +256,18 @@ mod tests {
             "hsl(225, 100%, 70%)",
             "hsla(20, 100%, 50%, .5)",
             "hsla(1., 0.5, 0.5, 1.)",
+            // CSS4 modern color functions
+            "oklch(0.7 0.15 180)",
+            "oklch(70% 0.15 180)",
+            "oklch(70% 0.15 180 / 50%)",
+            "oklab(0.7 0.1 -0.1)",
+            "lab(50 30 -20)",
+            "lch(50 30 120)",
+            "hwb(120 10% 20%)",
         ];
 
         for case in cases {
-            assert!(match_color(case, 1, 1).is_some());
+            assert!(match_color(case, 1, 1).is_some(), "Failed to parse: {}", case);
         }
 
         assert_eq!(
@@ -389,6 +397,45 @@ mod tests {
                 position: lsp_types::Position::new(9, 11),
             }
         );
+    }
+
+    #[test]
+    fn test_parse_modern_color_functions() {
+        // oklch
+        let text = "color: oklch(70% 0.15 180);";
+        let colors = parse(text);
+        assert_eq!(colors.len(), 1);
+        assert_eq!(colors[0].matched, "oklch(70% 0.15 180)");
+
+        // oklch with alpha
+        let text = "color: oklch(70% 0.15 180 / 50%);";
+        let colors = parse(text);
+        assert_eq!(colors.len(), 1);
+        assert!(colors[0].color.a < 1.0);
+
+        // oklab
+        let text = "color: oklab(0.7 0.1 -0.1);";
+        let colors = parse(text);
+        assert_eq!(colors.len(), 1);
+        assert_eq!(colors[0].matched, "oklab(0.7 0.1 -0.1)");
+
+        // lab
+        let text = "color: lab(50 30 -20);";
+        let colors = parse(text);
+        assert_eq!(colors.len(), 1);
+        assert_eq!(colors[0].matched, "lab(50 30 -20)");
+
+        // lch
+        let text = "color: lch(50 30 120);";
+        let colors = parse(text);
+        assert_eq!(colors.len(), 1);
+        assert_eq!(colors[0].matched, "lch(50 30 120)");
+
+        // hwb
+        let text = "color: hwb(120 10% 20%);";
+        let colors = parse(text);
+        assert_eq!(colors.len(), 1);
+        assert_eq!(colors[0].matched, "hwb(120 10% 20%)");
     }
 
     #[test]

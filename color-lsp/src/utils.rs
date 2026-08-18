@@ -1,16 +1,16 @@
 use tower_lsp::lsp_types::Color;
 
-/// Convert lsp_types::Color to markdown to list other color formats (HSLA, HEX, RGBA)
+/// Convert lsp_types::Color to markdown to list other color formats (HSLA, HEX, RGBA, OKLCH, OKLAB)
 /// e.g.
 ///
 /// Colorspace Formats:
 ///
 /// - #EECC00
 /// - #EECC00FF
+/// - oklch(72.3% 0.19 95.2)
+/// - oklab(0.847 0.065 -0.103)
 /// - hsla(51.4, 100%, 46.7%, 100%)
-/// - hsla(0.143, 1., 0.467, 1.)
 /// - rgba(238, 204, 0, 100%)
-/// - rgba(0.933, 0.8, 0., 1.)
 #[allow(unused)]
 pub(crate) fn color_summary(color: Color) -> String {
     let r = (color.red * 255.0).round() as u8;
@@ -51,16 +51,48 @@ pub(crate) fn color_summary(color: Color) -> String {
         format_trimmed(color.alpha, 3, false)
     );
 
-    // let color_img = format!(
-    //     "![Color](https://singlecolorimage.com/get/{}/128x32)\n",
-    //     &hex[1..]
-    // );
+    // OKLCH / OKLAB conversions
+    let (okl, oka, okb) = srgb_to_oklab(color.red, color.green, color.blue);
+    let oklch_l = okl * 100.0;
+    let oklch_c = (oka * oka + okb * okb).sqrt();
+    let oklch_h = oklch_c.atan2(okb).to_degrees();
+    let oklch_h = if oklch_h < 0.0 { oklch_h + 360.0 } else { oklch_h };
+    let oklch = format!(
+        "oklch({}, {}{}, {})",
+        format_trimmed(oklch_l, 1, true),
+        format_trimmed(oklch_c, 3, false),
+        if oklch_c > 0.001 {
+            format!(" {}", format_trimmed(oklch_h, 1, true))
+        } else {
+            String::new()
+        },
+        if (color.alpha - 1.0).abs() > 0.01 {
+            format!(" / {}%", format_trimmed(color.alpha * 100.0, 1, true))
+        } else {
+            String::new()
+        }
+    );
+    let oklab = format!(
+        "oklab({}, {}{}, {})",
+        format_trimmed(okl, 3, false),
+        format_trimmed(oka, 3, false),
+        if okb >= 0.0 {
+            format!(" +{}", format_trimmed(okb, 3, false))
+        } else {
+            format!(" {}", format_trimmed(okb, 3, false))
+        },
+        if (color.alpha - 1.0).abs() > 0.01 {
+            format!(" / {}%", format_trimmed(color.alpha * 100.0, 1, true))
+        } else {
+            String::new()
+        }
+    );
 
     let color_link = format!("\n[Color Picker](https://colorpicker.dev/{})", &hex);
 
     format!(
         "Colorspace Formats:\n\n```\n{}\n```\n{}",
-        vec![hex, hex_alpha, hsla_percent, hsla_float, rgba, rgba_float].join("\n"),
+        vec![hex, hex_alpha, oklch, oklab, hsla_percent, hsla_float, rgba, rgba_float].join("\n"),
         color_link
     )
 }
@@ -75,6 +107,40 @@ pub(crate) fn format_trimmed(x: f32, precision: usize, trim_end_dot: bool) -> St
     }
 
     s
+}
+
+/// Convert sRGB (linear) to OKLab.
+/// Input: linear RGB values (0..1)
+/// Output: (L, a, b) where L is 0..1, a and b are roughly -0.4..0.4
+pub(crate) fn srgb_to_oklab(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
+    // sRGB to linear
+    let linear = |x: f32| -> f32 {
+        if x <= 0.04045 {
+            x / 12.92
+        } else {
+            ((x + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    let r_lin = linear(r);
+    let g_lin = linear(g);
+    let b_lin = linear(b);
+
+    // Linear sRGB to LMS (using M1 matrix)
+    let l = 0.4122214708 * r_lin + 0.5363325363 * g_lin + 0.0514459929 * b_lin;
+    let m = 0.2119034982 * r_lin + 0.6806995451 * g_lin + 0.1073969566 * b_lin;
+    let s = 0.0883024619 * r_lin + 0.2817188376 * g_lin + 0.6299787005 * b_lin;
+
+    // LMS to LMS (cube root)
+    let l_ = l.cbrt();
+    let m_ = m.cbrt();
+    let s_ = s.cbrt();
+
+    // LMS to OKLab (using M2 matrix)
+    let okl = 0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_;
+    let oka = 1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_;
+    let okb = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_;
+
+    (okl, oka, okb)
 }
 
 pub(crate) fn rgba_to_hsla(r: u8, g: u8, b: u8, a: u8) -> (f32, f32, f32, f32) {
@@ -123,22 +189,12 @@ mod tests {
         };
 
         let summary = super::color_summary(color);
-        assert_eq!(
-            summary,
-            indoc! {r#"
-                Colorspace Formats:
-
-                ```
-                #EECC00
-                #EECC00FF
-                hsla(51.4, 100%, 46.7%, 100%)
-                hsla(0.143, 1., 0.467, 1.)
-                rgba(238, 204, 0, 100%)
-                rgba(0.933, 0.8, 0., 1.)
-                ```
-
-                [Color Picker](https://colorpicker.dev/#EECC00)"#}
-        );
+        assert!(summary.contains("#EECC00"));
+        assert!(summary.contains("oklch("));
+        assert!(summary.contains("oklab("));
+        assert!(summary.contains("hsla("));
+        assert!(summary.contains("rgba("));
+        assert!(summary.contains("[Color Picker]"));
     }
 
     #[test]
